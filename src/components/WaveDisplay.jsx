@@ -1,11 +1,12 @@
 import { useEffect, useRef } from 'react'
 
-const ACCENT     = '#6b5ce7'
-const GRID_COLOR = 'rgba(107, 92, 231, 0.12)'
-const LOGICAL_W  = 500
-const LOGICAL_H  = 100
+const LOGICAL_W   = 500
+const LOGICAL_H   = 120
+const BG          = '#0d0d0d'
+const AXIS        = 'rgba(255,255,255,0.07)'
+const LINE_STATIC = 'rgba(245,244,240,0.45)'
+const LINE_LIVE   = '#C8281E'
 
-// Static waveform for preview when no note is playing (2 cycles)
 function staticWave(type, n) {
   const d = new Float32Array(n)
   for (let i = 0; i < n; i++) {
@@ -28,27 +29,25 @@ export default function WaveDisplay({ analyser, isPlaying, waveform }) {
   useEffect(() => {
     const canvas = canvasRef.current
     const dpr = window.devicePixelRatio || 1
-
     canvas.width  = LOGICAL_W * dpr
     canvas.height = LOGICAL_H * dpr
-
     const ctx = canvas.getContext('2d')
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
 
     function draw() {
-      ctx.clearRect(0, 0, LOGICAL_W, LOGICAL_H)
+      // Background
+      ctx.fillStyle = BG
+      ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H)
 
-      // Center guide line
+      // Center axis
       ctx.beginPath()
-      ctx.strokeStyle = GRID_COLOR
+      ctx.strokeStyle = AXIS
       ctx.lineWidth = 1
-      ctx.setLineDash([5, 5])
       ctx.moveTo(0, LOGICAL_H / 2)
       ctx.lineTo(LOGICAL_W, LOGICAL_H / 2)
       ctx.stroke()
-      ctx.setLineDash([])
 
-      // Sample data: live from analyser or static preview
+      // Sample data
       let data
       if (isPlaying && analyser) {
         data = new Float32Array(analyser.fftSize)
@@ -57,27 +56,25 @@ export default function WaveDisplay({ analyser, isPlaying, waveform }) {
         data = staticWave(waveform, 512)
       }
 
-      // Draw waveform
+      // Waveform
       ctx.beginPath()
-      ctx.strokeStyle = ACCENT
-      ctx.lineWidth = 2
-      ctx.lineJoin = 'round'
+      ctx.strokeStyle = isPlaying ? LINE_LIVE : LINE_STATIC
+      ctx.lineWidth = isPlaying ? 2 : 1.5
+      ctx.lineJoin = 'miter'
 
       const n = data.length
       for (let i = 0; i < n; i++) {
         const x = (i / (n - 1)) * LOGICAL_W
-        const y = LOGICAL_H / 2 - data[i] * LOGICAL_H * 0.43
+        const y = LOGICAL_H / 2 - data[i] * LOGICAL_H * 0.42
         i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
       }
       ctx.stroke()
 
-      if (isPlaying) {
-        rafRef.current = requestAnimationFrame(draw)
-      }
+      if (isPlaying) rafRef.current = requestAnimationFrame(draw)
     }
 
     draw()
-    return () => { cancelAnimationFrame(rafRef.current) }
+    return () => cancelAnimationFrame(rafRef.current)
   }, [analyser, isPlaying, waveform])
 
   return (

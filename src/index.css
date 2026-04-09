@@ -1,34 +1,35 @@
 @import "tailwindcss";
 
 :root {
-  --bg:        #edeef5;
-  --sh-light:  #ffffff;
-  --sh-dark:   #d0d1de;
-  --accent:    #6b5ce7;
-  --accent-lo: rgba(107, 92, 231, 0.12);
-  --text:      #3a3a5c;
-  --text-muted:#9898b8;
+  --black:  #0f0f0f;
+  --white:  #f5f4f0;
+  --red:    #C8281E;
+  --yellow: #E8B800;
+  --blue:   #1545C8;
+  --scope:  #0d0d0d;
+  --border: 3px solid #0f0f0f;
+
+  --font-title: 'Bebas Neue', 'Arial Black', sans-serif;
+  --font-mono:  'IBM Plex Mono', ui-monospace, monospace;
 }
 
 * { box-sizing: border-box; }
 
 body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background: #eee7e0;
+  color: var(--black);
+  font-family: var(--font-mono);
   -webkit-font-smoothing: antialiased;
 }
 
-/* Neumorphic helpers */
-.neu-raised {
-  box-shadow: 6px 6px 16px var(--sh-dark), -6px -6px 16px var(--sh-light);
+/* Focus indicators — blue outline, consistent across all interactive elements */
+:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
 }
-.neu-raised-sm {
-  box-shadow: 4px 4px 10px var(--sh-dark), -4px -4px 10px var(--sh-light);
-}
-.neu-inset {
-  box-shadow: inset 4px 4px 10px var(--sh-dark), inset -4px -4px 10px var(--sh-light);
-}
-.neu-inset-sm {
-  box-shadow: inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light);
+button:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+  z-index: 1;
+  position: relative;
 }

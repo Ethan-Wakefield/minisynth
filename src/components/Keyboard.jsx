@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 const NOTES = [
   { note: 'C4',  freq: 261.63, key: 'a', black: false },
@@ -16,17 +16,29 @@ const NOTES = [
   { note: 'C5',  freq: 523.25, key: 'k', black: false },
 ]
 
-const KEY_MAP = Object.fromEntries(NOTES.map(n => [n.key, n.freq]))
-
-// White-key index at which each black key is centred
+const KEY_MAP      = Object.fromEntries(NOTES.map(n => [n.key, n.freq]))
 const BLACK_OFFSETS = { 'C#4': 1, 'D#4': 2, 'F#4': 4, 'G#4': 5, 'A#4': 6 }
+const WHITE_KEYS   = NOTES.filter(n => !n.black)
+const BLACK_KEYS   = NOTES.filter(n => n.black)
+const NUM_WHITE    = WHITE_KEYS.length  // 8
 
-const WHITE_W = 48
-const BLACK_W = 30
-const WHITE_H = 140
-const BLACK_H = 90
+const WHITE_H = 148
+const BLACK_H = 92
 
 export default function Keyboard({ activeFreqs, onNoteOn, onNoteOff }) {
+  const containerRef = useRef(null)
+  const [keyW, setKeyW] = useState(60)
+
+  // Scale key width to always fill container
+  useEffect(() => {
+    const obs = new ResizeObserver(([entry]) => {
+      setKeyW(Math.floor(entry.contentRect.width / NUM_WHITE))
+    })
+    obs.observe(containerRef.current)
+    return () => obs.disconnect()
+  }, [])
+
+  // Computer keyboard
   useEffect(() => {
     const held = new Set()
     function onKeyDown(e) {
@@ -46,51 +58,78 @@ export default function Keyboard({ activeFreqs, onNoteOn, onNoteOff }) {
     }
   }, [onNoteOn, onNoteOff])
 
-  const whites = NOTES.filter(n => !n.black)
-  const blacks = NOTES.filter(n => n.black)
+  const blackW = Math.round(keyW * 0.58)
 
   return (
-    <div className="flex flex-col gap-3">
-      <span style={{ color: 'var(--text-muted)', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.12em' }}>
-        Keyboard&nbsp;
-        <span style={{ textTransform: 'none', fontWeight: 400, fontSize: 9 }}>
-          — A–K &amp; W E T Y U
+    <div>
+      {/* Label strip */}
+      <div style={{
+        padding: '7px 14px',
+        borderTop: 'var(--border)',
+        borderBottom: '1px solid rgba(15,15,15,0.25)',
+        background: 'var(--white)',
+      }}>
+        <span style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: 8,
+          letterSpacing: '0.2em',
+          textTransform: 'uppercase',
+          color: '#5e5e5e',
+        }}>
+          Keyboard — A–K &amp; W E T Y U
         </span>
-      </span>
+      </div>
 
+      {/* Keys — fills 100% width via containerRef + ResizeObserver */}
       <div
-        className="relative select-none"
-        style={{ width: whites.length * WHITE_W, height: WHITE_H }}
+        ref={containerRef}
+        style={{
+          position: 'relative',
+          width: '100%',
+          height: WHITE_H,
+          background: 'var(--white)',
+          overflow: 'hidden',
+        }}
       >
         {/* White keys */}
-        {whites.map((n, i) => {
+        {WHITE_KEYS.map((n, i) => {
           const active = activeFreqs.has(n.freq)
           return (
             <div
               key={n.note}
+              role="button"
+              tabIndex={0}
+              aria-label={n.note}
+              aria-pressed={active}
               onMouseDown={() => onNoteOn(n.freq)}
               onMouseUp={() => onNoteOff(n.freq)}
               onMouseLeave={() => onNoteOff(n.freq)}
+              onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') onNoteOn(n.freq) }}
+              onKeyUp={(e) => { if (e.key === ' ' || e.key === 'Enter') onNoteOff(n.freq) }}
               style={{
                 position: 'absolute',
-                left: i * WHITE_W,
-                width: WHITE_W - 2,
+                left: i * keyW,
+                top: 0,
+                width: keyW,
                 height: WHITE_H,
-                borderRadius: '0 0 8px 8px',
+                borderRight: i < WHITE_KEYS.length - 1 ? '1px solid var(--black)' : 'none',
+                background: active ? 'var(--red)' : 'var(--white)',
                 cursor: 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'flex-end',
                 alignItems: 'center',
-                paddingBottom: 8,
-                transition: 'background 0.05s',
-                background: active ? 'rgba(107,92,231,0.18)' : '#f6f6fa',
-                boxShadow: active
-                  ? 'inset 3px 3px 8px var(--sh-dark), inset -2px -2px 5px var(--sh-light)'
-                  : '3px 5px 10px var(--sh-dark), -1px -1px 4px var(--sh-light)',
+                paddingBottom: 9,
+                userSelect: 'none',
               }}
             >
-              <span style={{ fontSize: 9, color: 'var(--text-muted)', lineHeight: 1 }}>
+              <span aria-hidden="true" style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: Math.min(9, keyW * 0.17),
+                // #5e5e5e on #f5f4f0 = 5.9:1 contrast — passes WCAG AA
+                color: active ? 'var(--white)' : '#5e5e5e',
+                lineHeight: 1,
+              }}>
                 {n.key.toUpperCase()}
               </span>
             </div>
@@ -98,27 +137,30 @@ export default function Keyboard({ activeFreqs, onNoteOn, onNoteOff }) {
         })}
 
         {/* Black keys */}
-        {blacks.map(n => {
+        {BLACK_KEYS.map(n => {
           const active = activeFreqs.has(n.freq)
           return (
             <div
               key={n.note}
+              role="button"
+              tabIndex={0}
+              aria-label={n.note}
+              aria-pressed={active}
               onMouseDown={e => { e.stopPropagation(); onNoteOn(n.freq) }}
               onMouseUp={e => { e.stopPropagation(); onNoteOff(n.freq) }}
               onMouseLeave={() => onNoteOff(n.freq)}
+              onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.stopPropagation(); onNoteOn(n.freq) } }}
+              onKeyUp={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.stopPropagation(); onNoteOff(n.freq) } }}
               style={{
                 position: 'absolute',
-                left: BLACK_OFFSETS[n.note] * WHITE_W - BLACK_W / 2,
-                width: BLACK_W,
+                left: BLACK_OFFSETS[n.note] * keyW - blackW / 2,
+                top: 0,
+                width: blackW,
                 height: BLACK_H,
                 zIndex: 10,
-                borderRadius: '0 0 6px 6px',
+                background: active ? 'var(--red)' : 'var(--black)',
                 cursor: 'pointer',
-                transition: 'background 0.05s',
-                background: active ? '#5a4cbf' : '#2e2e4a',
-                boxShadow: active
-                  ? 'inset 2px 2px 6px rgba(0,0,0,0.5)'
-                  : '3px 6px 12px rgba(0,0,0,0.35)',
+                userSelect: 'none',
               }}
             />
           )
