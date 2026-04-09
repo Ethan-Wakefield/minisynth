@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+:root {
+  --bg:        #edeef5;
+  --sh-light:  #ffffff;
+  --sh-dark:   #d0d1de;
+  --accent:    #6b5ce7;
+  --accent-lo: rgba(107, 92, 231, 0.12);
+  --text:      #3a3a5c;
+  --text-muted:#9898b8;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Neumorphic helpers */
+.neu-raised {
+  box-shadow: 6px 6px 16px var(--sh-dark), -6px -6px 16px var(--sh-light);
+}
+.neu-raised-sm {
+  box-shadow: 4px 4px 10px var(--sh-dark), -4px -4px 10px var(--sh-light);
+}
+.neu-inset {
+  box-shadow: inset 4px 4px 10px var(--sh-dark), inset -4px -4px 10px var(--sh-light);
+}
+.neu-inset-sm {
+  box-shadow: inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light);
+}
